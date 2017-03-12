@@ -1,10 +1,15 @@
-from bs4 import BeautifulSoup
+import os, sys
 from urllib.parse import *
 from datetime import *
+
+from bs4 import BeautifulSoup
 from dateutil.parser import parse
 from dateutil.rrule import rrule, DAILY
-import os, sys
 
+try:
+	from .dependencies.progress import put_progress
+except:
+	from dependencies.progress import put_progress
 
 def get_html(codemap, pwd):
 	text = ""
@@ -13,6 +18,12 @@ def get_html(codemap, pwd):
 		ch = chr(idx) if idx > -1 else '.'
 		text += ch
 	return text
+
+
+def test_case(codemap, date):
+	pwd = date.strftime("%y%m%d")
+	soup = BeautifulSoup(get_html(codemap, pwd), 'html.parser')
+	if soup.title: return pwd
 
 
 def get_password(file, startDate, endDate):
@@ -39,11 +50,10 @@ def get_password(file, startDate, endDate):
 			return 0 	
 		codemap = unquote(t).split(',')
 	
-	for date in rrule(DAILY, count=(endDate-startDate).days, dtstart=startDate):
-		pwd = date.strftime("%y%m%d")
-		soup = BeautifulSoup(get_html(codemap, pwd), 'html.parser')
-		if soup.title:
-			return pwd
-	else:
-		print('Find Password Failult!')
-		return 0
+	rng = (endDate-startDate).days
+	for i, date in enumerate(rrule(DAILY, count=rng, dtstart=startDate)):
+		case = test_case(codemap, date)
+		if case: return case
+		put_progress(rng, i, 'Brute Forcing...')
+
+

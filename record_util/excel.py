@@ -37,7 +37,8 @@ class ExcelWork:
 	def header_row(self):
 		return OrderedDict(zip(self.header, self.header))
 
-	def get_output(self, body=None, title=None, start_row=0, start_col=0, header=True, colwidths=[], selects=[], excludes=[], formats=None):
+	def get_output(self, body=None, title=None, start_row=0, start_col=0, 
+			header=True, colwidths=[], selects=[], excludes=[], formats=None, output_to_file=""):
 		if selects:
 			queryset = [OrderedDict((k, row[k]) for k in selects if k in row) for row in body or self.records]
 		else:
@@ -81,7 +82,12 @@ class ExcelWork:
 								value = to_num(value)
 				ws.write(r+start_row, c+start_col-nShift, value, fmt)
 		wb.close()
-		return output.getvalue()
+
+		if output_to_file:
+			with open(output_to_file, 'wb') as fp:
+				fp.write(output.getvalue())
+		else:
+			return output.getvalue() 
 
 
 	def ext_pattern(self, reg_pattern):

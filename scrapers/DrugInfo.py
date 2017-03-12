@@ -6,20 +6,11 @@ from concurrent.futures import ThreadPoolExecutor
 from requests import get, Session
 from bs4 import BeautifulSoup
 
-from ip import get_public_ip
-from HtmlParser import ParseWebPage
 
-HEADERS = {
-	'Content-Type':'application/x-www-form-urlencoded',
-	'Host':'www.druginfo.co.kr',
-	'Origin':'https://www.druginfo.co.kr',
-	'Referer':'https://www.druginfo.co.kr/',
-	'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
-}
+from .DrugInfoConfig import *
+from .dependencies.HtmlParser import ParseWebPage
 
-PUBLIC_IP = get_public_ip() 
-USER_ID = 'anonymous04'
-PASSWORD = 'admindg04!'
+__all__ = ['DrugInfoScraper']
 
 
 def hexMD5(value):
@@ -38,18 +29,20 @@ class DrugInfoScraper:
 
 	def __init__(self, userId=None, passWord=None, pubicIp=None, headers=None):
 		self.session = None
-		self.header = None
-		if userId and passWord and pubicIp:
-			h = hashlib.md5()
-			h.update(passWord.encode())
-			hidden_value = h.hexdigest()
-			timestamp = datetime.now().strftime("%Y%m%d%H")
-			self.login_data = {
-				'id': userId,
-				't_passwd': passWord,
-				'passwd': hexMD5(timestamp+hexMD5(passWord)+pubicIp),
-				'timestamp': timestamp,
-			}
+		self.header = headers or HEADERS
+		self.userId = userId or USER_ID
+		self.passWord = passWord or PASSWORD
+		self.pubicIp = pubicIp or PUBLIC_IP
+		h = hashlib.md5()
+		h.update(self.passWord.encode())
+		hidden_value = h.hexdigest()
+		timestamp = datetime.now().strftime("%Y%m%d%H")
+		self.login_data = {
+			'id': self.userId,
+			't_passwd': self.passWord,
+			'passwd': hexMD5(timestamp+hexMD5(self.passWord)+self.pubicIp),
+			'timestamp': timestamp,
+		}
 		
 	def login(self):
 		session = Session()
@@ -139,13 +132,3 @@ class DrugInfoScraper:
 					continue
 			return '일반'
 
-
-
-
-
-
-d = DrugInfoScraper(USER_ID, PASSWORD, PUBLIC_IP, HEADERS)
-d.login()
-d.logout()
-r = d.search('레보펙신', True)
-print(r)

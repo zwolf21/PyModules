@@ -2,6 +2,7 @@ import time
 
 from requests import get
 
+__all__ = ['get_public_ip']
 
 def timeit(func):
 	def timed(*args, **kwargs):
