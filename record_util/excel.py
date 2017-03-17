@@ -19,7 +19,7 @@ class ExcelWork:
 			self.records = records
 			self.header = list(records[0].keys())
 		else:
-			wb = xlrd.open_workbook(excel_path or excel_contents)
+			wb = xlrd.open_workbook(excel_path or excel_contents) if excel_path else xlrd.open_workbook(file_contents=excel_contents)
 			ws = wb.sheet_by_index(sheet_index)
 			self.header = ws.row_values(0)
 			if toNumber:
