@@ -37,17 +37,25 @@ class DrugInfoScraper:
 		h.update(self.passWord.encode())
 		hidden_value = h.hexdigest()
 		timestamp = datetime.now().strftime("%Y%m%d%H")
-		self.login_data = {
-			'id': self.userId,
-			't_passwd': self.passWord,
-			'passwd': hexMD5(timestamp+hexMD5(self.passWord)+self.pubicIp),
-			'timestamp': timestamp,
-		}
-		
+	
+	def _get_login_data(self):
+		if self.userId and self.passWord and self.pubicIp:
+			timestamp = datetime.now().strftime("%Y%m%d%H")		
+			return {
+				'id': self.userId,
+				't_passwd': self.passWord,
+				'passwd': hexMD5(timestamp+hexMD5(self.passWord)+self.pubicIp),
+				'timestamp': timestamp,
+			}	
+
 	def login(self):
+		login_data = self._get_login_data()
+		if not login_data:
+			return False
 		session = Session()
-		session.post(self.login_url, self.login_data, headers = self.header)
+		session.post(self.login_url, login_data, headers = self.header)
 		self.session = session
+		return True
 
 	def logout(self):
 		if self.session:
@@ -82,6 +90,8 @@ class DrugInfoScraper:
 			with ThreadPoolExecutor(min(self.MAX_WORKER, len(id_list))) as executor:
 				details = executor.map(self.get_detail, id_list)
 			for detail in details:
+				if not detail:
+					continue
 				for result in results:
 					if result['id'] == detail['id']:
 						break
@@ -95,6 +105,9 @@ class DrugInfoScraper:
 
 
 	def get_detail(self, drugId):
+		if not self.login():
+			return
+
 		detail = {'id': drugId}
 		detail_html = self.session.get(self.detail_url+drugId).text
 		detail_prs = ParseWebPage(detail_html)
